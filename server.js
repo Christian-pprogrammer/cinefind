@@ -6,7 +6,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const OMDB_API_KEY = process.env.OMDB_API_KEY; // Change to OMDB
+const OMDB_API_KEY = process.env.OMDB_API_KEY;
 
 app.use(cors());
 app.use(express.json());
@@ -44,6 +44,38 @@ app.get('/api/movies/search', async (req, res) => {
         console.error('Search error:', error.message);
         res.status(500).json({ 
             error: 'Search failed', 
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/movies/filtered', async (req, res) => {
+    try {
+        const { year, type, page = 1 } = req.query;
+        
+        let searchQuery = 'movie'; 
+        
+        let apiUrl = `${OMDB_BASE_URL}?apikey=${OMDB_API_KEY}&s=${searchQuery}&page=${page}`;
+        
+        if (year) apiUrl += `&y=${year}`;
+        if (type) apiUrl += `&type=${type}`;
+        
+        const response = await axios.get(apiUrl);
+        
+        if (response.data.Response === 'False') {
+            return res.status(404).json({ 
+                error: 'No movies found with these filters',
+                message: response.data.Error 
+            });
+        }
+        
+        console.log(`Found ${response.data.Search.length} movies with filters - Year: ${year || 'Any'}, Type: ${type || 'Any'}`);
+        res.json(response.data);
+        
+    } catch (error) {
+        console.error('Filter error:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to apply filters',
             details: error.message 
         });
     }

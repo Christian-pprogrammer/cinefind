@@ -166,24 +166,31 @@ class MovieApp {
         const loadMoreBtn = document.getElementById('load-more-btn');
         loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
         loadMoreBtn.disabled = true;
-
+    
         try {
             let data;
-            if (this.currentFilter === 'search') {
+            const year = document.getElementById('year-filter').value;
+            const type = document.getElementById('type-filter').value;
+            
+            if (year || type) {
+                // Load more with current filters
+                const response = await fetch(`/api/movies/filtered?year=${year || ''}&type=${type || ''}&page=${this.currentPage}`);
+                data = await response.json();
+            } else if (this.currentFilter === 'search') {
                 const response = await fetch(`/api/movies/search?q=${encodeURIComponent(this.currentSearch)}&page=${this.currentPage}`);
                 data = await response.json();
             } else {
                 const response = await fetch(`/api/movies/popular?page=${this.currentPage}`);
                 data = await response.json();
             }
-
+    
             if (data.Response === 'True' && data.Search) {
                 this.displayMovies(data.Search, true);
                 this.toggleLoadMore(data.Search.length > 0);
             } else {
                 this.toggleLoadMore(false);
             }
-
+    
         } catch (error) {
             console.error('Error loading more movies:', error);
             this.showError('Failed to load more movies');
@@ -415,14 +422,54 @@ class MovieApp {
         const year = document.getElementById('year-filter').value;
         const type = document.getElementById('type-filter').value;
         
-        // For now, we'll reload with current filter
-        // In a real app, we'd filter the existing data or make new API calls
-        this.showNotification('Filters applied!', 'info');
+        this.currentPage = 1;
+        
+        if (year || type) {
+            console.log("Applying filters:", { year, type });
+            this.applyFiltersToAPI(year, type);
+        } else {
+            this.loadPopularMovies();
+        }
     }
+
+    async applyFiltersToAPI(year, type) {
+        this.showLoading();
+        
+        try {
+            let url = `/api/movies/filtered?`;
+            const params = new URLSearchParams();
+            
+            if (year) params.append('year', year);
+            if (type) params.append('type', type);
+            params.append('page', this.currentPage);
+            
+            const response = await fetch(url + params.toString());
+            const data = await response.json();
+    
+            if (!response.ok) {
+                throw new Error(data.error || 'Filter failed');
+            }
+    
+            if (data.Response === 'False' || !data.Search) {
+                this.showNoResults();
+                return;
+            }
+    
+            this.displayMovies(data.Search);
+            this.toggleLoadMore(data.Search.length > 0);
+            
+            this.showNotification(`Filters applied! (Year: ${year || 'Any'}, Type: ${type || 'Any'})`, 'success');
+    
+        } catch (error) {
+            console.error('Filter error:', error);
+            this.showError(error.message);
+        }
+    }    
 
     clearFilters() {
         document.getElementById('year-filter').value = '';
-        document.getElementById('type-filter').value = '';
+        document.getElementById('type-filter').value = '';        
+        this.loadPopularMovies();
         this.showNotification('Filters cleared!', 'info');
     }
 
