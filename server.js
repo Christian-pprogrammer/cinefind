@@ -8,19 +8,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const OMDB_API_KEY = process.env.OMDB_API_KEY; // Change to OMDB
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
 const OMDB_BASE_URL = 'http://www.omdbapi.com/';
 
-// Home route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Search movies - OMDb style
 app.get('/api/movies/search', async (req, res) => {
     try {
         const query = req.query.q;
@@ -77,10 +74,8 @@ app.get('/api/movie/:id', async (req, res) => {
     }
 });
 
-// Get popular movies (we'll simulate with search)
 app.get('/api/movies/popular', async (req, res) => {
     try {
-        // Pick a random keyword each time
         const popularKeywords = [
             "love", "hero", "war", "future", "king",
             "world", "space", "dragon", "night", "mission",
@@ -154,7 +149,5 @@ app.use('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🎬 Movie Discovery Server running on port ${PORT}`);
-    console.log(`📍 Local: http://localhost:${PORT}`);
-    console.log(`🔑 OMDb API Key: ${OMDB_API_KEY ? 'Loaded ✅' : 'Missing ❌'}`);
+    console.log(`Movie Discovery Server running on port ${PORT}`);
 });
