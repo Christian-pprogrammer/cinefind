@@ -80,11 +80,18 @@ app.get('/api/movie/:id', async (req, res) => {
 // Get popular movies (we'll simulate with search)
 app.get('/api/movies/popular', async (req, res) => {
     try {
-        // Search for popular movies to simulate "popular"
+        // Pick a random keyword each time
+        const popularKeywords = [
+            "love", "hero", "war", "future", "king",
+            "world", "space", "dragon", "night", "mission",
+            "family", "adventure", "crime", "dream"
+        ];
+        const keyword = popularKeywords[Math.floor(Math.random() * popularKeywords.length)];
+
         const response = await axios.get(
-            `${OMDB_BASE_URL}?apikey=${OMDB_API_KEY}&s=avengers&type=movie`
+            `${OMDB_BASE_URL}?apikey=${OMDB_API_KEY}&s=${keyword}&type=movie`
         );
-        
+
         if (response.data.Response === 'False') {
             return res.status(404).json({ 
                 error: 'No popular movies found',
@@ -92,8 +99,9 @@ app.get('/api/movies/popular', async (req, res) => {
             });
         }
         
-        console.log(`Fetched ${response.data.Search.length} popular movies`);
+        console.log(`Fetched popular movies using keyword: ${keyword}`);
         res.json(response.data);
+
     } catch (error) {
         console.error('Error fetching popular movies:', error.message);
         res.status(500).json({ 
@@ -102,6 +110,7 @@ app.get('/api/movies/popular', async (req, res) => {
         });
     }
 });
+
 
 // Get movies by year
 app.get('/api/movies/year/:year', async (req, res) => {
